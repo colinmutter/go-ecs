@@ -1,0 +1,3 @@
+package: github.com/colinmutter/go-ecs
+import:
+- package: github.com/aws/aws-sdk-go
