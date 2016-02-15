@@ -1,3 +1,6 @@
 package: github.com/colinmutter/go-ecs
 import:
 - package: github.com/aws/aws-sdk-go
+- package: github.com/go-ini/ini
+- package: github.com/Sirupsen/logrus
+- package: github.com/buger/goterm
