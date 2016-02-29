@@ -3,13 +3,17 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
 	"regexp"
+	"strings"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/ecs"
 	"github.com/buger/goterm"
+	"github.com/olekukonko/tablewriter"
 )
 
 var profile = flag.String("p", "", "AWS config profile")
@@ -59,7 +63,8 @@ func main() {
 		return
 	}
 
-	goterm.Println()
+	goterm.Clear()
+	goterm.Flush()
 
 	// Get lots of extra data by cluster
 	for _, thisCluster := range clusters {
@@ -92,59 +97,89 @@ func main() {
 			return
 		}
 
-		clusterServices = clusterServices
-		clusterStatus = clusterStatus
-		clusterTasks = clusterTasks
+		// Self-assignments ignore _ not used errors until I'm done
+		// clusterServices = clusterServices
+		// clusterStatus = clusterStatus
+		// clusterTasks = clusterTasks
 		clusterContainerInstances = clusterContainerInstances
 		ec2Instances = ec2Instances
-		//fmt.Println(clusterServices)
-		//fmt.Println(clusterStatus)
-		//fmt.Println(ec2Instances)
+
+		fmt.Println(strings.Repeat("_", goterm.Width()))
 
 		// Pretty-print the response data.
-		clusterTable := goterm.NewTable(0, 10, 5, ' ', 0)
+		clusterTable := tablewriter.NewWriter(os.Stdout)
+		clusterTable.SetHeader([]string{"Cluster", "Status", "Pending Tasks", "Running Tasks", "Container Instances"})
+		clusterTable.SetRowSeparator("-")
+		clusterTable.Append([]string{
+			*clusterStatus.ClusterName,
+			*clusterStatus.Status,
+			fmt.Sprintf("%d", *clusterStatus.PendingTasksCount),
+			fmt.Sprintf("%d", *clusterStatus.RunningTasksCount),
+			fmt.Sprintf("%d", *clusterStatus.RegisteredContainerInstancesCount),
+		})
+		clusterTable.Render()
+		fmt.Println()
 
-		fmt.Fprintf(clusterTable, "Cluster\tStatus\tPending Tasks\tRunning Tasks\tContainer Instances\n")
-		fmt.Fprintf(clusterTable, "%s\t%s\t%d\t%d\t%d\n", *clusterStatus.ClusterName,
-			*clusterStatus.Status, *clusterStatus.PendingTasksCount, *clusterStatus.RunningTasksCount,
-			*clusterStatus.RegisteredContainerInstancesCount)
-
-		serviceTable := goterm.NewTable(0, 10, 5, ' ', 0)
-		fmt.Fprintf(serviceTable, "Service\tStatus\tTask Definition\tPending Tasks\tRunning Tasks\n")
-		taskDefRex := regexp.MustCompile("task-definition/(.+)$")
+		serviceTable := tablewriter.NewWriter(os.Stdout)
+		serviceTable.SetHeader([]string{"Service", "Status", "Task Def", "Tasks Running/Pending", "Deployments Running/Pending", "Last Updated"})
+		serviceTable.SetRowSeparator(".")
 		for _, service := range clusterServices {
-			taskDef := taskDefRex.FindString(*service.TaskDefinition)
-			fmt.Fprintf(serviceTable, "%s\t%s\t%s\t%d\t%d\n", *service.ServiceName, *service.Status,
-				taskDef, *service.PendingCount, *service.RunningCount)
-		}
+			deployments := make(map[string]map[string]int64)
+			lastChange := time.Unix(0, 0)
+			var deploymentsStr string
 
-		taskTable := goterm.NewTable(0, 10, 5, ' ', 0)
-		fmt.Fprintf(taskTable, "Task Service\tTask Arn\tStatus\tDesired Status\n")
-		//taskDefRex := regexp.MustCompile("task-definition/(.+)$")
-		for _, task := range clusterTasks {
-			taskDefName := ""
-			// Look up the service this task belongs to
-			for _, service := range clusterServices {
-				if *service.TaskDefinition == *task.TaskDefinitionArn {
-					taskDefName = *service.ServiceName
-					break
+			for _, dep := range service.Deployments {
+
+				if _, ok := deployments[*dep.Status]; !ok {
+					statusBreakout := make(map[string]int64)
+					deployments[*dep.Status] = statusBreakout
 				}
-			}
-			//taskDef := taskDefRex.FindString(*service.TaskDefinition)
-			fmt.Fprintf(taskTable, "%s\t%s\t%s\t%s\n", taskDefName, *task.TaskArn, *task.LastStatus, *task.DesiredStatus)
-		}
 
-		goterm.Println(clusterTable)
-		goterm.Println(serviceTable)
-		goterm.Println(taskTable)
-		goterm.Println()
+				if dep.UpdatedAt.After(lastChange) == true {
+					lastChange = *dep.UpdatedAt
+				}
+
+				deployments[*dep.Status]["running"] += *dep.RunningCount
+				deployments[*dep.Status]["pending"] += *dep.PendingCount
+			}
+
+			for status, counts := range deployments {
+				deploymentsStr += fmt.Sprintf("%s: %d / %d\n", status, counts["running"], counts["pending"])
+			}
+
+			serviceTable.Append([]string{
+				*service.ServiceName,
+				*service.Status,
+				extractTaskDef(*service.TaskDefinition),
+				fmt.Sprintf("%d / %d", *service.RunningCount, *service.PendingCount),
+				deploymentsStr,
+				lastChange.String(),
+			})
+		}
+		serviceTable.Render()
+		fmt.Println()
+
+		// Pretty-print the response data.
+		taskTable := tablewriter.NewWriter(os.Stdout)
+		taskTable.SetHeader([]string{"Task Definition", "Status", "Desired Status", "Containers"})
+		taskTable.SetRowSeparator(".")
+		for _, task := range clusterTasks {
+			taskTable.Append([]string{
+				extractTaskDef(*task.TaskDefinitionArn),
+				*task.LastStatus,
+				*task.DesiredStatus,
+				fmt.Sprintf("%d", len(task.Containers)),
+			})
+		}
+		taskTable.Render()
+		fmt.Println()
 	}
 
-	goterm.Flush()
+}
 
-	// Describe cluster services
-
-	// Get task details
+func extractTaskDef(taskDefinition string) string {
+	taskDefRex := regexp.MustCompile("task-definition/(.+)$")
+	return taskDefRex.FindString(taskDefinition)
 }
 
 // ListClusters will return a slice of ECS Clusters

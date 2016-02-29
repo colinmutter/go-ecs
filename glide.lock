@@ -1,5 +1,5 @@
-hash: fc759f62611263024efc6dcdedc958107212ba50b042b59094d77a8031f377c9
-updated: 2016-02-15T18:05:34.38077815-05:00
+hash: c4fa761db1ae7e5de4cb44c3576a17dff28f323b84a6a57911605b76e5bed3ed
+updated: 2016-02-29T16:10:54.980935552-05:00
 imports:
 - name: github.com/aws/aws-sdk-go
   version: 72a68b4e5a9c3f6a75813e6d4393b3a21749e9c4
@@ -15,6 +15,11 @@ imports:
   version: 0b12d6b521d83fc7f755e7cfc1b1fbdd35a01a74
 - name: github.com/lsegal/gucumber
   version: 44a4d7eb3b14a88cf82b073dfb7e06277afdc549
+- name: github.com/mattn/go-runewidth
+  version: d037b52ae5c0338c2bb18da01fb7ddf0e8be9aa1
+  repo: https://github.com/mattn/go-runewidth
+- name: github.com/olekukonko/tablewriter
+  version: cca8bbc0798408af109aaaa239cbd2634846b340
 - name: github.com/pmezard/go-difflib
   version: d8ed2627bdf02c080bf22230dbb337003b7aba2d
   subpackages:
@@ -22,7 +27,7 @@ imports:
 - name: github.com/shiena/ansicolor
   version: a422bbe96644373c5753384a59d678f7d261ff10
 - name: github.com/Sirupsen/logrus
-  version: 3455d89ac9652295c85db2a98ea32f1d61c380bc
+  version: 219c8cb75c258c552e999735be6df753ffc7afdc
 - name: github.com/stretchr/objx
   version: cbeaeb16a013161a98496fad62933b1d21786672
 - name: github.com/stretchr/testify

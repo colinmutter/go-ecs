@@ -4,3 +4,4 @@ import:
 - package: github.com/go-ini/ini
 - package: github.com/Sirupsen/logrus
 - package: github.com/buger/goterm
+- package: github.com/olekukonko/tablewriter
