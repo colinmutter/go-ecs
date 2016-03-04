@@ -12,7 +12,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/ecs"
-	"github.com/buger/goterm"
 	"github.com/olekukonko/tablewriter"
 )
 
@@ -63,9 +62,6 @@ func main() {
 		return
 	}
 
-	goterm.Clear()
-	goterm.Flush()
-
 	// Get lots of extra data by cluster
 	for _, thisCluster := range clusters {
 
@@ -104,21 +100,28 @@ func main() {
 		clusterContainerInstances = clusterContainerInstances
 		ec2Instances = ec2Instances
 
-		fmt.Println(strings.Repeat("_", goterm.Width()))
+		clusterName := fmt.Sprintf("Cluster:\t%s", *clusterStatus.ClusterName)
+		fmt.Println(clusterName)
+		fmt.Println(strings.Repeat("-", len(clusterName)+8))
+		fmt.Printf("-Status:\t%s\n", *clusterStatus.Status)
+		fmt.Printf("-Pending Tasks:\t%d\n", *clusterStatus.PendingTasksCount)
+		fmt.Printf("-Running Tasks:\t%d\n", *clusterStatus.RunningTasksCount)
+		fmt.Printf("-Instances:\t%d\n", *clusterStatus.RegisteredContainerInstancesCount)
+		fmt.Println()
 
 		// Pretty-print the response data.
-		clusterTable := tablewriter.NewWriter(os.Stdout)
-		clusterTable.SetHeader([]string{"Cluster", "Status", "Pending Tasks", "Running Tasks", "Container Instances"})
-		clusterTable.SetRowSeparator("-")
-		clusterTable.Append([]string{
-			*clusterStatus.ClusterName,
-			*clusterStatus.Status,
-			fmt.Sprintf("%d", *clusterStatus.PendingTasksCount),
-			fmt.Sprintf("%d", *clusterStatus.RunningTasksCount),
-			fmt.Sprintf("%d", *clusterStatus.RegisteredContainerInstancesCount),
-		})
-		clusterTable.Render()
-		fmt.Println()
+		// clusterTable := tablewriter.NewWriter(os.Stdout)
+		// clusterTable.SetHeader([]string{"Cluster", "Status", "Pending Tasks", "Running Tasks", "Container Instances"})
+		// clusterTable.SetRowSeparator("-")
+		// clusterTable.Append([]string{
+		// 	*clusterStatus.ClusterName,
+		// 	*clusterStatus.Status,
+		// 	fmt.Sprintf("%d", *clusterStatus.PendingTasksCount),
+		// 	fmt.Sprintf("%d", *clusterStatus.RunningTasksCount),
+		// 	fmt.Sprintf("%d", *clusterStatus.RegisteredContainerInstancesCount),
+		// })
+		// clusterTable.Render()
+		// fmt.Println()
 
 		serviceTable := tablewriter.NewWriter(os.Stdout)
 		serviceTable.SetHeader([]string{"Service", "Status", "Task Def", "Tasks Running/Pending", "Deployments Running/Pending", "Last Updated"})

@@ -40,15 +40,17 @@ func getSessionWithConfig(config *aws.Config) (*session.Session, error) {
 	region, err := getAWSRegion()
 
 	if profileName != "" {
-		fmt.Println("Using profile: ", *profile)
+		fmt.Println("Profile: ", *profile)
 	} else {
-		fmt.Println("Using profile: default")
+		fmt.Println("Profile: default")
 	}
 
 	if region != "" {
-		fmt.Println("With region: ", region)
+		fmt.Println("Region: ", region)
 		config = config.WithRegion(region)
 	}
+
+	fmt.Println()
 	return session.New(config), err
 }
 
