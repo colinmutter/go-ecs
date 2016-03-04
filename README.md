@@ -4,13 +4,18 @@ go-ecs is a simple command line utility to view [AWS ECS](https://aws.amazon.com
 
 ## Installation
 
-On OS X or Linux:
+```
+go install github.com/colinmutter/go-ecs
+```
+
+Binaries for OS X or Linux:
 
 ```
 curl https://raw.githubusercontent.com/colinmutter/go-ecs/master/install.sh | sh
 ```
 
-On Windows download [binary](https://github.com/colinmutter/go-ecs/releases).
+Binaries for Windows:
+[releases](https://github.com/colinmutter/go-ecs/releases).
 
 ## Usage
 
